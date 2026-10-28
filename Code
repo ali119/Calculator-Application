@@ -1,0 +1,142 @@
+import javax.swing.*;
+import java.awt.*;
+
+/**
+ * Simple GUI calculator built with Java Swing.
+ * Supports + - * /, %, +/- , decimals, backspace and clear.
+ */
+public class Calculator extends JFrame {
+
+    private final JTextField display = new JTextField("0");
+    private double firstOperand = 0;
+    private String operator = "";
+    private boolean startNewNumber = true;
+
+    public Calculator() {
+        super("Java Calculator");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout(5, 5));
+
+        display.setEditable(false);
+        display.setHorizontalAlignment(JTextField.RIGHT);
+        display.setFont(new Font("SansSerif", Font.BOLD, 28));
+        display.setPreferredSize(new Dimension(300, 60));
+        add(display, BorderLayout.NORTH);
+
+        String[] keys = {
+            "C", "+/-", "%", "/",
+            "7", "8", "9", "*",
+            "4", "5", "6", "-",
+            "1", "2", "3", "+",
+            "0", ".", "DEL", "="
+        };
+
+        JPanel panel = new JPanel(new GridLayout(5, 4, 5, 5));
+        for (String key : keys) {
+            JButton button = new JButton(key);
+            button.setFont(new Font("SansSerif", Font.PLAIN, 20));
+            button.addActionListener(e -> handle(key));
+            panel.add(button);
+        }
+        add(panel, BorderLayout.CENTER);
+
+        pack();
+        setLocationRelativeTo(null);
+    }
+
+    private void handle(String key) {
+        if (display.getText().equals("Error")) {
+            reset();
+        }
+
+        switch (key) {
+            case "C":
+                reset();
+                break;
+            case "DEL":
+                String text = display.getText();
+                display.setText(text.length() > 1 ? text.substring(0, text.length() - 1) : "0");
+                break;
+            case "+/-":
+                display.setText(format(-parse(display.getText())));
+                break;
+            case "%":
+                display.setText(format(parse(display.getText()) / 100));
+                break;
+            case ".":
+                if (startNewNumber) {
+                    display.setText("0.");
+                    startNewNumber = false;
+                } else if (!display.getText().contains(".")) {
+                    display.setText(display.getText() + ".");
+                }
+                break;
+            case "+": case "-": case "*": case "/":
+                if (!operator.isEmpty() && !startNewNumber) {
+                    calculate();
+                }
+                firstOperand = parse(display.getText());
+                operator = key;
+                startNewNumber = true;
+                break;
+            case "=":
+                if (!operator.isEmpty()) {
+                    calculate();
+                    operator = "";
+                    startNewNumber = true;
+                }
+                break;
+            default: // digits
+                if (startNewNumber || display.getText().equals("0")) {
+                    display.setText(key);
+                } else {
+                    display.setText(display.getText() + key);
+                }
+                startNewNumber = false;
+        }
+    }
+
+    private void calculate() {
+        double second = parse(display.getText());
+        double result;
+        switch (operator) {
+            case "+": result = firstOperand + second; break;
+            case "-": result = firstOperand - second; break;
+            case "*": result = firstOperand * second; break;
+            case "/":
+                if (second == 0) {
+                    display.setText("Error");
+                    operator = "";
+                    startNewNumber = true;
+                    return;
+                }
+                result = firstOperand / second;
+                break;
+            default: return;
+        }
+        display.setText(format(result));
+        firstOperand = result;
+    }
+
+    private void reset() {
+        display.setText("0");
+        firstOperand = 0;
+        operator = "";
+        startNewNumber = true;
+    }
+
+    private double parse(String s) {
+        return Double.parseDouble(s);
+    }
+
+    private String format(double value) {
+        if (value == (long) value) {
+            return String.valueOf((long) value);
+        }
+        return String.valueOf(value);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new Calculator().setVisible(true));
+    }
+}
